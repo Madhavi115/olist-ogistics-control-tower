@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.egg-info/
+build/
+dist/
+.env
+.ipynb_checkpoints/
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+reports/*
+!reports/.gitkeep
+# Machine learning artifacts
+artifacts/
+mlruns/
+*.joblib
+*.pkl
+
+# macOS
+.DS_Store
+
+# Local environment files
+.env.*
+!.env.example
+
+# IDE-specific local settings
+.idea/
