@@ -1,8 +1,7 @@
 import pandas as pd
 import pytest
 
-from olist_logistics.pipeline import build_kpis, build_order_mart
-from olist_logistics.pipeline import find_missing_item_shipments
+from olist_logistics.pipeline import build_kpis, build_order_mart, find_missing_item_shipments
 
 
 def test_order_grain_and_item_aggregation(source_frames):
