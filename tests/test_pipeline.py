@@ -1,7 +1,12 @@
 import pandas as pd
 import pytest
 
-from olist_logistics.pipeline import build_kpis, build_order_mart, find_missing_item_shipments
+from olist_logistics.pipeline import (
+    build_data_quality_report,
+    build_kpis,
+    build_order_mart,
+    find_missing_item_shipments,
+)
 
 
 def test_order_grain_and_item_aggregation(source_frames):
@@ -66,3 +71,32 @@ def test_find_missing_item_shipments():
 
     assert len(result) == 1
     assert result.iloc[0]["order_id"] == "A102"
+
+
+def test_build_data_quality_report():
+    orders = pd.DataFrame({
+        "order_id": ["A101", "A102", "A103", "A104"],
+        "order_status": [
+            "delivered",
+            "shipped",
+            "canceled",
+            "delivered",
+        ],
+        "order_delivered_carrier_date": [
+            "2026-01-05",
+            "2026-01-06",
+            None,
+            "2026-01-08",
+        ],
+    })
+
+    items = pd.DataFrame({
+        "order_id": ["A101"],
+    })
+
+    result = build_data_quality_report(orders, items)
+
+    assert result["total_orders"] == 4
+    assert result["orders_without_items"] == 3
+    assert result["missing_item_shipments"] == 2
+    assert result["delivered_without_items"] == 1
