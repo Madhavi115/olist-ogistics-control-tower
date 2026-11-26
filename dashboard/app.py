@@ -415,3 +415,53 @@ with st.expander("📊 Business analytics", expanded=False):
                 st.caption("Association only. If an order has multiple valid reviews, its mean "
                            "review score is used. Reviews and actual delivery dates must not "
                            "be used as purchase-time prediction inputs.")
+
+# Customer review prediction is a separate historical modeling use case.
+# Do not score the five shipment demo orders with this model: they are a
+# separate demonstration batch without observed customer-review outcomes.
+st.divider()
+with st.expander("⭐ Customer review prediction — model evaluation", expanded=False):
+    st.caption("Purchase-time low-review prediction. Historical validation only; not live customer support.")
+    review_metrics_file = ROOT / "reports" / "customer_review_metrics.json"
+    if not review_metrics_file.is_file():
+        st.info(
+            "Train the review model first with `python -m olist_logistics.customer_review_model "
+            "--raw-dir data/raw`. This will create the evaluation report."
+        )
+    else:
+        try:
+            review_metrics = json.loads(review_metrics_file.read_text(encoding="utf-8"))
+            best_name = review_metrics["selected_model"]
+            metrics = review_metrics["test"][best_name]
+            st.write(f"**Validation-selected model:** {best_name.replace('_', ' ').title()}")
+            st.caption("Chronological test period: " +
+                       str(review_metrics["date_ranges"]["test"]["start"]) + " to " +
+                       str(review_metrics["date_ranges"]["test"]["end"]))
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Test orders", f"{metrics['rows']:,}")
+            m2.metric("Low-review prevalence", f"{metrics['prevalence']:.1%}")
+            m3.metric("ROC-AUC", f"{metrics['roc_auc']:.3f}" if metrics["roc_auc"] is not None else "N/A")
+            m4.metric("Average precision", f"{metrics['average_precision']:.3f}" if metrics["average_precision"] is not None else "N/A")
+            st.write(
+                f"**Top-10% review budget:** flagged {metrics['alert_count']:,} orders and "
+                f"identified {metrics['detected_low_reviews']:,} low-reviewed orders "
+                f"(precision {metrics['precision_at_10_pct']:.1%})."
+            )
+            comparison = pd.DataFrame([
+                {"Model": name.replace("_", " ").title(),
+                 "Average precision": row["average_precision"],
+                 "Low reviews in top 10%": row["detected_low_reviews"]}
+                for name, row in review_metrics["test"].items()
+            ])
+            st.plotly_chart(
+                px.bar(comparison, x="Model", y="Low reviews in top 10%",
+                       title="Historical holdout: low-reviewed orders found within fixed alert budget"),
+                use_container_width=True,
+            )
+            st.dataframe(comparison, use_container_width=True, hide_index=True)
+            st.warning("This model is trained only on delivered, reviewed orders. It cannot establish "
+                       "why a review is negative, and it has not been validated on all incoming orders.")
+            st.caption("Scores are not verified calibrated probabilities. The test set was not "
+                       "used for model selection.")
+        except (KeyError, TypeError, ValueError, OSError) as exc:
+            st.error(f"Could not display customer review metrics: {exc}")
