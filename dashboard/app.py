@@ -286,9 +286,15 @@ with st.expander("📊 Business analytics", expanded=False):
     if st.button("Load business insights"):
         try:
             from olist_logistics.business_intelligence import (
-                benchmark_performance, business_findings, business_summary,
-                delivery_benchmark, read_business_data, regional_performance,
-                review_severity, sales_month_coverage, satisfaction_by_delivery,
+                benchmark_performance,
+                business_findings,
+                business_summary,
+                delivery_benchmark,
+                read_business_data,
+                regional_performance,
+                review_severity,
+                sales_month_coverage,
+                satisfaction_by_delivery,
                 seller_performance,
             )
 

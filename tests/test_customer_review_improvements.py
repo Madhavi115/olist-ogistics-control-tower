@@ -4,8 +4,12 @@ import pandas as pd
 import pytest
 
 from olist_logistics.customer_review_improvements import (
-    EXTRA_NUMERIC, EXTENDED_FEATURES, build_enriched_cohort,
-    compare_models, diagnostic_groups, primary_category, seller_prior_counts,
+    EXTENDED_FEATURES,
+    build_enriched_cohort,
+    compare_models,
+    diagnostic_groups,
+    primary_category,
+    seller_prior_counts,
 )
 
 

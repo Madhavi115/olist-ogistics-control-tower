@@ -19,8 +19,14 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from .customer_review_model import (
-    FEATURES, NUMERIC, CATEGORICAL, TARGET, chronological_split,
-    evaluate_ranked, make_review_cohort, _models,
+    CATEGORICAL,
+    FEATURES,
+    NUMERIC,
+    TARGET,
+    _models,
+    chronological_split,
+    evaluate_ranked,
+    make_review_cohort,
 )
 from .pipeline import build_order_mart, load_sources
 

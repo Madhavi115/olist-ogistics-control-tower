@@ -1,8 +1,11 @@
 import pandas as pd
 
 from olist_logistics.business_intelligence import (
-    business_summary, monthly_sales, regional_performance,
-    satisfaction_by_delivery, seller_performance,
+    business_summary,
+    monthly_sales,
+    regional_performance,
+    satisfaction_by_delivery,
+    seller_performance,
 )
 
 

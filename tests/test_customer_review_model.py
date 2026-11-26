@@ -4,7 +4,11 @@ import pandas as pd
 import pytest
 
 from olist_logistics.customer_review_model import (
-    FEATURES, chronological_split, evaluate_ranked, make_review_cohort, train_and_evaluate,
+    FEATURES,
+    chronological_split,
+    evaluate_ranked,
+    make_review_cohort,
+    train_and_evaluate,
 )
 
 
