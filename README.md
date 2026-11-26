@@ -14,15 +14,15 @@
 
 ### Control Tower overview
 
-![Actual Olist Logistics AI Control Tower Streamlit dashboard with investigation controls, KPI cards, and shipment risk leaderboard](docs/images/dashboard-overview.webp)
+![Actual Olist Logistics AI Control Tower Streamlit dashboard with investigation controls, KPI cards, and shipment risk leaderboard](docs/images/dashboard-overview.png)
 
-*Actual Streamlit dashboard running locally. The five-order demonstration shows one priority investigation, with `ORDER-004` ranked first at a relative model score of `0.6039`.*
+_Actual Streamlit dashboard running locally. The five-order demonstration shows one priority investigation, with `ORDER-004` ranked first at a relative model score of `0.6039`._
 
 ### Shipment risk leaderboard
 
-![Actual shipment risk leaderboard with the ranked orders and horizontal risk comparison chart](docs/images/dashboard-leaderboard.webp)
+![Actual shipment risk leaderboard with the ranked orders and horizontal risk comparison chart](docs/images/dashboard-leaderboard.png)
 
-*Interactive ranking of five demo shipments, with the highest-ranked order flagged for investigation. Scores are relative model outputs, not calibrated delivery-delay probabilities.*
+_Interactive ranking of five demo shipments, with the highest-ranked order flagged for investigation. Scores are relative model outputs, not calibrated delivery-delay probabilities._
 
 The dashboard also provides an **AI analyst** tab for structured Qwen3 investigation summaries, a **Verified evidence** tab for deterministic findings, and an **ML performance** tab for historical holdout metrics. These other tabs are features of the running application, not pictured in the screenshots above.
 
@@ -63,14 +63,14 @@ flowchart TD
 
 The following results come from a **chronological 60% train / 20% validation / 20% test** experiment on historical delivered orders. Model selection used validation **average precision**; reported performance below is on the later, held-out **19,294-order test period**.
 
-| Holdout metric | Logistic Regression | Random Forest V3 |
-|---|---:|---:|
-| ROC-AUC | 0.6950 | **0.7380** |
-| Average precision | 0.0700 | **0.0778** |
-| Precision@top 10% | 6.74% | **9.27%** |
-| Recall@top 10% | 19.29% | **26.56%** |
-| Actual late orders found among 1,930 flagged | 130 | **179** |
-| Lift@top 10% vs batch prevalence | 1.93× | **2.65×** |
+| Holdout metric                               | Logistic Regression | Random Forest V3 |
+| -------------------------------------------- | ------------------: | ---------------: |
+| ROC-AUC                                      |              0.6950 |       **0.7380** |
+| Average precision                            |              0.0700 |       **0.0778** |
+| Precision@top 10%                            |               6.74% |        **9.27%** |
+| Recall@top 10%                               |              19.29% |       **26.56%** |
+| Actual late orders found among 1,930 flagged |                 130 |          **179** |
+| Lift@top 10% vs batch prevalence             |               1.93× |        **2.65×** |
 
 **Interpretation:** At an identical **1,930-order investigation budget**, Random Forest identified **49 more late deliveries** than Logistic Regression. The test period contained **674 late deliveries** (3.49% prevalence). These are retrospective, historical ranking results—not evidence that investigations prevented delays or produced cost savings.
 
@@ -143,12 +143,12 @@ In the dashboard, choose **Five demo shipments**, an investigation budget of **1
 
 ## API endpoints
 
-| Method | Path | Purpose |
-|---|---|---|
-| `GET` | `/health` | Confirm the trained model is available |
-| `POST` | `/predict` | Score one order |
-| `POST` | `/predict/batch` | Rank multiple orders and flag a configured top fraction |
-| `POST` | `/investigate` | Rank orders, run a LangGraph workflow, and return verified findings plus a structured local-LLM assessment |
+| Method | Path             | Purpose                                                                                                    |
+| ------ | ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/health`        | Confirm the trained model is available                                                                     |
+| `POST` | `/predict`       | Score one order                                                                                            |
+| `POST` | `/predict/batch` | Rank multiple orders and flag a configured top fraction                                                    |
+| `POST` | `/investigate`   | Rank orders, run a LangGraph workflow, and return verified findings plus a structured local-LLM assessment |
 
 The dashboard's CSV uploader uses these columns:
 
