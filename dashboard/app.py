@@ -274,3 +274,144 @@ else:
     )
     if METRICS_FILE.exists():
         st.caption("Historical model metrics are available in reports/ml_v3_metrics.json.")
+
+# Historical business analysis is separate from the prediction and investigation API.
+st.divider()
+with st.expander("📊 Business analytics", expanded=False):
+    st.caption("Historical Olist descriptive analysis; independent of the five demo shipments.")
+    raw_dir_text = st.text_input(
+        "Folder containing original Olist CSV files", value=str(ROOT / "data" / "raw"),
+        help="Requires orders, items and customers CSV files; reviews CSV is optional.",
+    )
+    if st.button("Load business insights"):
+        try:
+            from olist_logistics.business_intelligence import (
+                benchmark_performance, business_findings, business_summary,
+                delivery_benchmark, read_business_data, regional_performance,
+                review_severity, sales_month_coverage, satisfaction_by_delivery,
+                seller_performance,
+            )
+
+            with st.spinner("Aggregating historical Olist data..."):
+                hist_mart, hist_items, hist_reviews = read_business_data(Path(raw_dir_text).expanduser())
+                baseline = delivery_benchmark(hist_mart)
+                sellers = seller_performance(hist_mart, hist_items)
+                regions = regional_performance(hist_mart)
+                reviews = satisfaction_by_delivery(hist_mart, hist_reviews)
+                st.session_state["business_data"] = {
+                    "summary": business_summary(hist_mart),
+                    "benchmark": baseline,
+                    "monthly": sales_month_coverage(hist_mart),
+                    "sellers": benchmark_performance(sellers, baseline),
+                    "regions": benchmark_performance(regions, baseline),
+                    "reviews": reviews,
+                    "severity": review_severity(hist_mart, hist_reviews) if hist_reviews is not None else None,
+                    "findings": business_findings(hist_mart, sellers, regions, reviews),
+                }
+            st.success("Historical business insights loaded.")
+        except (FileNotFoundError, ValueError, KeyError, OSError) as exc:
+            st.error(f"Could not load business insights: {exc}")
+
+    if "business_data" in st.session_state:
+        data = st.session_state["business_data"]
+        summary = data["summary"]
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Historical orders", f"{summary['orders']:,}")
+        c2.metric("Item sales value", f"R$ {summary['item_value_brl']:,.0f}")
+        c3.metric("Customer states", summary["customer_states"])
+        c4.metric("Eligible late rate", f"{data['benchmark']:.2%}" if data["benchmark"] is not None else "N/A")
+        st.caption("Item value excludes freight; it is not profit or confirmed recognized revenue.")
+
+        st.subheader("Business findings")
+        if data["findings"]:
+            for finding in data["findings"]:
+                st.markdown(f"- {finding}")
+        else:
+            st.info("Not enough eligible observations for a business summary.")
+        st.caption("Descriptive findings suggest where to investigate; they do not prove causes.")
+
+        sales_tab, seller_tab, region_tab, review_tab = st.tabs(
+            ["📈 Sales trends", "🏪 Seller scorecards", "🗺️ Regional logistics", "⭐ Customer reviews"]
+        )
+        with sales_tab:
+            df = data["monthly"]
+            if df.empty:
+                st.info("No purchase-month sales observations are available.")
+            else:
+                interior = df[df["month_status"] == "interior month"]
+                chart_data = interior if not interior.empty else df
+                st.plotly_chart(
+                    px.line(chart_data, x="purchase_month", y="item_value_brl", markers=True,
+                            title="Monthly item sales value (boundary months excluded when possible)"),
+                    use_container_width=True,
+                )
+                boundary = df[df["month_status"] != "interior month"]
+                if not boundary.empty:
+                    st.warning("First/last observed months are excluded from the trend chart when possible. "
+                               "They may have partial coverage; this is not proof that they are incomplete.")
+                st.dataframe(df, hide_index=True, use_container_width=True)
+        with seller_tab:
+            df = data["sellers"]
+            minimum = st.slider("Minimum eligible seller deliveries", 20, 500, 100, 10)
+            eligible = df[df["eligible_deliveries"] >= minimum].sort_values(
+                "excess_late_deliveries", ascending=False
+            )
+            st.caption("Ranked by observed late deliveries above a simple overall-rate benchmark. "
+                       "Multi-seller orders count for each participating seller; this does not assign blame.")
+            st.dataframe(eligible.head(100), hide_index=True, use_container_width=True)
+            st.download_button("Download seller scorecards", df.to_csv(index=False),
+                               "seller_scorecards.csv", "text/csv")
+        with region_tab:
+            df = data["regions"]
+            minimum = st.slider("Minimum eligible state deliveries", 20, 1000, 100, 20)
+            eligible = df[df["eligible_deliveries"] >= minimum].sort_values(
+                "excess_late_deliveries", ascending=False
+            )
+            st.caption("Compare number of late deliveries and percentage: a high rate on few orders "
+                       "is not always the largest customer impact.")
+            if not eligible.empty:
+                plot = eligible.head(15)
+                fig = px.bar(plot, x="customer_state", y="late_deliveries",
+                             hover_data=["eligible_deliveries", "late_rate_pct", "excess_late_deliveries"],
+                             title="Late deliveries in states ranked by excess over baseline")
+                st.plotly_chart(fig, use_container_width=True)
+            st.dataframe(eligible, hide_index=True, use_container_width=True)
+        with review_tab:
+            reviews = data["reviews"]
+            severity = data["severity"]
+            if severity is None:
+                st.info("Add olist_order_reviews_dataset.csv for customer-review analysis.")
+            elif severity.empty:
+                st.info("No valid reviews matched eligible delivered orders.")
+            else:
+                st.plotly_chart(
+                    px.bar(severity, x="delay_group", y="low_review_rate_pct",
+                           hover_data=["reviewed_orders", "mean_review_score"],
+                           title="Low customer ratings (1–2 stars) by lateness"),
+                    use_container_width=True,
+                )
+                st.dataframe(severity, hide_index=True, use_container_width=True)
+                st.markdown("**Customer impact: where low reviews occur**")
+                total_low = int(severity["low_review_count"].sum())
+                total_reviewed = int(severity["reviewed_orders"].sum())
+                v1, v2 = st.columns(2)
+                v1.metric("Reviewed eligible deliveries", f"{total_reviewed:,}")
+                v2.metric("Orders with low reviews", f"{total_low:,}")
+                st.plotly_chart(
+                    px.bar(
+                        severity, x="delay_group", y="low_review_count",
+                        text="low_review_count",
+                        hover_data=["share_of_low_reviews_pct", "reviewed_orders", "low_review_rate_pct"],
+                        title="Number of low-reviewed orders by delivery lateness",
+                        labels={"low_review_count": "Low-reviewed orders", "delay_group": "Delivery lateness"},
+                    ),
+                    use_container_width=True,
+                )
+                st.caption("Counts are calculated from individual reviewed orders, not estimated "
+                           "from rounded percentages. On-time deliveries may account for many "
+                           "negative reviews because their order volume is large.")
+                st.markdown("**Late versus on-time summary**")
+                st.dataframe(reviews, hide_index=True, use_container_width=True)
+                st.caption("Association only. If an order has multiple valid reviews, its mean "
+                           "review score is used. Reviews and actual delivery dates must not "
+                           "be used as purchase-time prediction inputs.")
