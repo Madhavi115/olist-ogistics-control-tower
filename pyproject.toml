@@ -5,12 +5,30 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "olist-logistics-control-tower"
 version = "0.1.0"
-description = "Phase 1: reproducible Olist logistics data pipeline"
-requires-python = ">=3.10"
-dependencies = ["pandas>=2.0,<3.0", "pyarrow>=14,<25"]
+description = "Olist logistics ML risk prediction, investigation API, and AI control tower"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.0,<3.0",
+    "pyarrow>=14,<25",
+    "numpy>=1.24,<3",
+    "scikit-learn>=1.4,<2",
+    "joblib>=1.3,<2",
+    "fastapi>=0.110,<1",
+    "uvicorn>=0.27,<1",
+    "pydantic>=2.7,<3",
+    "langgraph>=0.2,<2",
+    "langchain-ollama>=0.3,<2",
+    "requests>=2.31,<3",
+    "streamlit>=1.35,<2",
+    "plotly>=5.20,<7",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10", "ruff>=0.6,<1"]
+dev = [
+    "pytest>=8,<10",
+    "ruff>=0.6,<1",
+    "httpx>=0.27,<1",
+]
 
 [project.scripts]
 olist-pipeline = "olist_logistics.cli:main"

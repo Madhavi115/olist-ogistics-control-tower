@@ -115,3 +115,27 @@ def find_missing_item_shipments(orders, items):
     ]
 
     return flagged_orders.copy()
+
+def build_data_quality_report(orders, items):
+    """Calculate order-item data quality metrics."""
+
+    missing_orders = orders[
+        ~orders["order_id"].isin(items["order_id"])
+    ]
+
+    missing_item_shipments = find_missing_item_shipments(
+        orders, items
+    )
+
+    delivered_without_items = missing_orders[
+        missing_orders["order_status"] == "delivered"
+    ]
+
+    report = {
+        "total_orders": int(len(orders)),
+        "orders_without_items": int(len(missing_orders)),
+        "missing_item_shipments": int(len(missing_item_shipments)),
+        "delivered_without_items": int(len(delivered_without_items)),
+    }
+
+    return report

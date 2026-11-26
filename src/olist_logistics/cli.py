@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .pipeline import build_kpis, build_order_mart, load_sources
+from .pipeline import build_data_quality_report, build_kpis, build_order_mart, load_sources
 
 
 def main() -> None:
@@ -16,12 +16,19 @@ def main() -> None:
     orders, items, customers = load_sources(args.raw_dir)
     mart = build_order_mart(orders, items, customers)
     metrics = build_kpis(mart)
+    quality_report = build_data_quality_report(orders, items)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     args.report_dir.mkdir(parents=True, exist_ok=True)
     mart.to_parquet(args.out_dir / "order_mart.parquet", index=False)
     (args.report_dir / "phase1_kpis.json").write_text(
         json.dumps(metrics, indent=2) + "\n", encoding="utf-8"
     )
+
+    (args.report_dir / "data_quality_report.json").write_text(
+    json.dumps(quality_report, indent=2) + "\n",
+    encoding="utf-8",
+    )
+
     print(json.dumps(metrics, indent=2))
     print(f"Saved: {args.out_dir / 'order_mart.parquet'}")
 
